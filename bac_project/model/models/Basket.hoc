@@ -1,0 +1,47 @@
+begintemplate Basket		
+public soma
+create soma
+access soma
+
+proc topol() {    
+    basic_shape()
+}
+
+proc basic_shape() {
+  soma {
+        pt3dclear() 
+        pt3dadd(0, 0, 0, 67)
+        pt3dadd(0, 0, 67, 67)
+      }
+}
+
+proc biophys() {  
+    soma {
+         Ra = 100
+         nseg = 1		        
+         cm = 1
+    }
+}
+
+proc conductances() {
+    soma {
+        insert pas		// leak current 
+        e_pas = -70
+        g_pas = 0.00015		// Rin = 48Meg
+
+        insert hh2		// Hodgin-Huxley INa and IK 
+        ek = -100		// potassium reversal potential 
+        ena = 50			// sodium reversal potential
+        vtraub_hh2 = -55	// resting Vm, BJ was -55
+        gnabar_hh2 = 0.05	// McCormick=15 muS, thal was 0.09
+        gkbar_hh2 = 0.01	// spike duration of interneurons
+  }
+}
+
+proc init() {
+    create soma    
+    topol()
+    biophys()
+    conductances()
+}
+endtemplate Basket

@@ -1,0 +1,4 @@
+load_file("interpxyz.hoc")	// only interpolates sections that have extracellular
+load_file("setpointers.hoc")	// automatically calls grindaway() in interpxyz.hoc
+load_file("field.hoc")		// computes extracellularly recorded potential vrec
+load_file("calcrxc.hoc")	// computes transfer r between segments and recording electrodes

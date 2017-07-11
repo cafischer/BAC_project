@@ -1,0 +1,82 @@
+begintemplate Martinotti
+public soma
+public x, y, z, position
+create soma
+access soma
+
+proc topol() {    
+    basic_shape()
+}
+
+proc basic_shape() {
+  soma {
+        pt3dclear() // total dendritic surface = 24058 um2
+        pt3dadd(0, 0, 0, 76.58)
+        pt3dadd(0, 0, 100, 76.58)
+      }
+  define_shape()
+}
+
+proc biophys() {  
+    soma {
+      nseg = 1		        
+      cm = 0.65
+    }
+}
+
+proc position() { local i
+  soma for i = 0, n3d()-1 {
+    pt3dchange(i, $1-x+x3d(i), $2-y+y3d(i), $3-z+z3d(i), diam3d(i))
+  }
+  x = $1  y = $2  z = $3
+  define_shape()
+}
+
+proc conductances() {
+    soma { 			// insert passive current everywhere
+        insert pas
+        g_pas = 3.79e-5
+        e_pas = -76.5	
+        Ra = 173
+
+        insert hh2		// insert fast spikes
+        ena = 50
+        ek = -100
+        vtraub_hh2 = -52
+        gnabar_hh2 = 0.2 
+        gkbar_hh2 = 0.005  
+        
+        insert itGHK		// T-current everywhere
+        cai = 2.4e-4 
+        cao = 2 
+        eca = 120 
+        shift_itGHK = -1	// screening charge shift + 3 mV error
+        gcabar_itGHK = 0.0002
+        qm_itGHK = 2.5
+        qh_itGHK = 2.5
+        pcabar_itGHK = 8e-5
+        
+        insert cadecay		// calcium diffusion everywhere
+        depth_cadecay = 0.1
+        kt_cadecay = 0		// no pump
+        kd_cadecay = 1e-4
+        taur_cadecay = 5
+        cainf_cadecay = 2.4e-4
+        
+    }
+}
+
+// initializes the cell
+proc init(){
+    create soma
+  
+    celsius = 37
+    
+    x = y = z = 0 
+    
+    topol()
+    biophys()
+    conductances()
+}
+
+endtemplate Martinotti

@@ -1,0 +1,272 @@
+//nrn_load_dll("./channels/i686/.libs/libnrnmech.so")
+//load_file("nrngui.hoc")
+
+begintemplate Pyramidal
+public soma, dend, apic, tuft, hillock, iseg, axon
+public x, y, z, position
+create soma, dend, apic, tuft, hillock, iseg, axon
+access soma
+
+proc topol() {
+    connect dend(0), soma(0.5)
+    connect apic(0), soma(1)
+    connect tuft(0), apic(1)
+    connect hillock(0), soma(0)
+    connect iseg(0), hillock(1)
+    connect axon(0), iseg(1)
+    
+    basic_shape()
+}
+/*
+proc basic_shape() {
+	soma L = sqrt(A_soma/PI)
+	soma diam = sqrt(A_soma/PI)
+	dend L = L_dend
+	dend diam = A_dend/(PI*L_dend)
+	apic L = L_apic
+	apic diam = A_apic/(PI*L_apic)
+	tuft L = L_tuft
+	tuft diam = A_tuft/(PI*L_tuft)
+	hillock L = 20.0
+	hillock diam(0:1) = 3.5:2.0
+	iseg L = 25.0
+	iseg diam(0:1) = 2.0:1.5
+	axon L = 500.0
+	axon diam = 1.5
+}
+*/
+proc basic_shape() {
+    soma {
+        pt3dclear()
+        pt3dadd(0, 0, 0, sqrt(A_soma/PI))
+        pt3dadd(0, 0, sqrt(A_soma/PI), sqrt(A_soma/PI))
+      }
+    dend {
+        pt3dclear()
+        pt3dadd(0, 0, 0, A_dend/(PI*L_dend))
+        pt3dadd(0, L_dend, 0, A_dend/(PI*L_dend))
+    }
+    apic {
+        pt3dclear()
+        pt3dadd(0, 0, 0, A_apic/(PI*L_apic))
+        pt3dadd(0, 0, L_apic, A_apic/(PI*L_apic))
+    }
+    tuft {
+        pt3dclear()
+        pt3dadd(0, 0, 0, A_tuft/(PI*L_tuft))
+        pt3dadd(0, 0, L_tuft, A_tuft/(PI*L_tuft))
+    }
+    hillock {
+        pt3dclear()
+        pt3dadd(0, 0, 0, 3.5)
+        pt3dadd(0, 0, -20.0, 2.0)
+    }
+    iseg {
+        pt3dclear()
+        pt3dadd(0, 0, 0, 2.0)
+        pt3dadd(0, 0, -25, 1.5)
+    }
+    axon {
+        pt3dclear()
+        pt3dadd(0, 0, 0, 1.5)
+        pt3dadd(0, 0, -500, 1.5)
+    }
+    
+    define_shape() 
+}
+
+proc position() { local i
+  soma for i = 0, n3d()-1 {
+    pt3dchange(i, $1-x+x3d(i), $2-y+y3d(i), $3-z+z3d(i), diam3d(i))
+  }
+  x = $1  y = $2  z = $3
+  define_shape()
+}
+
+proc biophys() {  
+    soma {
+      nseg = 1
+      Ra = ra_soma
+      cm = c_m_axosomatic
+    }
+    dend {
+      nseg = 1
+      Ra = ra_dend
+      cm = c_m_axosomatic
+    }
+    apic {
+      nseg = 5
+      Ra = ra_apic
+      cm = c_m
+    }
+    tuft {
+      nseg = 2
+      Ra = ra_tuft
+      cm = c_m
+    }
+    hillock { 
+      nseg = 5
+      Ra = soma.Ra
+      cm = c_m_axosomatic
+    }
+    iseg {
+      nseg = 5
+      Ra = soma.Ra
+      cm = c_m_axosomatic
+    }
+    axon { 
+      nseg = 1
+      Ra = soma.Ra
+      cm = c_m_axosomatic
+    }
+}
+
+proc conductances() {
+    forall {
+        insert pas
+        g_pas = 1.0/rm 
+        e_pas = -80.398657 
+    }
+    soma {       
+        insert nat
+        insert kfast
+        insert kslow
+        insert nap
+        insert km
+        
+        gbar_nat = 236.616175
+        gbar_kfast = 67.197508
+        gbar_kslow = 475.820646
+        gbar_nap = 1.443953
+        gbar_km = 10.459916
+        ena = 55
+        ek = -80
+        vshift_nat = 10
+    }
+    apic{
+        insert ih
+        insert nat
+        insert kfast
+        insert kslow
+        ehd_ih = -47
+        ena = 55
+        ek = -80
+        vshift_nat = 10
+    }
+    tuft{
+        insert ih
+        insert nat
+        insert kfast
+        insert kslow
+        ehd_ih = -47
+        gbar_ih = 16.194815
+        gbar_nat = 47.817841
+        ena = 55
+        ek = -80
+        vshift_nat = 10
+        
+        insert cad
+        insert sca
+	insert kca
+        gbar_sca = 0.45423528
+	gbar_kca =  6.15058501
+        eca = 140
+        vshift_sca = 7.19485311
+        ion_style("ca_ion",0,1,0,0,0)
+    }
+    dend {
+        insert ih
+        gbar_ih = 11.039583
+        ehd_ih = -47
+    }
+    hillock {
+        insert nat
+        gbar_nat = 9512.289205
+        ena = 55
+        vshift_nat = 10
+    }
+    iseg {
+        insert nat
+        gbar_nat = 13326.766938
+        ena = 55
+        vshift_nat = 10
+        vshift2_nat = -10.612583
+   } 
+}
+
+proc recalculate_passive_properties() {
+        soma g_pas = 1.0/rm_axosomatic
+        dend g_pas = 1.0/rm_axosomatic
+        axon g_pas = 1.0/rm_axosomatic
+        iseg g_pas = 1.0/rm_axosomatic
+        hillock g_pas = 1.0/rm_axosomatic
+        
+        apic g_pas = soma.g_pas*spinefactor 
+        tuft g_pas = soma.g_pas*spinefactor 
+            
+        apic cm = soma.cm*spinefactor
+        tuft cm = soma.cm*spinefactor
+    }
+
+proc recalculate_channel_densities() {
+    soma distance()
+    
+    // exponential decay
+    apic {
+      for(x) gbar_kfast(x) = soma.gbar_kfast(0.5) * exp(-distance(x)/decay_kfast)
+      for(x) gbar_kslow(x) = soma.gbar_kslow(0.5) * exp(-distance(x)/decay_kslow)
+    }
+    tuft {
+      for(x) gbar_kfast(x) = soma.gbar_kfast(0.5) * exp(-distance(x)/decay_kfast)
+      for(x) gbar_kslow(x) = soma.gbar_kslow(0.5) * exp(-distance(x)/decay_kslow)
+    }
+    
+    // linear equation
+    tuft slope_ih = gbar_ih/distance(0) 
+    tuft slope_nat = (gbar_nat-soma.gbar_nat(0.5))/distance(0) 
+    
+    apic {
+      for(x) gbar_nat(x) = slope_nat*distance(x) + soma.gbar_nat(0.5) 
+      for(x) gbar_ih(x) = slope_ih*distance(x) 
+    }
+}
+    
+proc init() {
+    PI  = 3.1415926535897932384
+
+    create soma, dend, apic, tuft, hillock, iseg, axon
+
+    celsius = 37
+    
+    A_soma = 1682.96028429
+    A_dend = 7060.90626796
+    A_apic = 9312.38528764
+    A_tuft = 9434.24861189
+
+    L_dend = 257 
+    L_apic = 500
+    L_tuft = 499
+    
+    ra_soma = 82
+    ra_dend = 734
+    ra_apic = 382.22414867
+    ra_tuft = 527
+  
+    rm = 15000
+    rm_axosomatic = 20587.734598
+    c_m = 1
+    c_m_axosomatic = 2.230408
+    decay_kfast = 20.075497
+    decay_kslow = 37.711817
+    spinefactor = 0.784797
+      
+    x = y = z = 0 
+    
+    biophys() 
+    topol() // make shure to set nseg beforehand
+    conductances()
+    recalculate_passive_properties()
+    recalculate_channel_densities()
+}
+
+endtemplate Pyramidal
